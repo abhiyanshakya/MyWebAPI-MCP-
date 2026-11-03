@@ -1,3 +1,4 @@
 Api/bin/
 Api/obj/
-Api/Properties/
+*json
+Api/BooksApi.http

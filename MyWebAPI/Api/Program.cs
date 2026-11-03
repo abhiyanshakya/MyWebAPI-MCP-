@@ -7,14 +7,6 @@ builder.Services.AddControllers();
 
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<TodoContext>(opt =>
-    opt.UseInMemoryDatabase("TodoList"));
-
-// builder.Services.AddHttpClient("DummyApi", client =>
-// {
-//     client.BaseAddress = new Uri("https://dummyjson.com/todos");
-// });
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -30,6 +22,6 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers(); //map to the right controller.
 
 app.Run();
