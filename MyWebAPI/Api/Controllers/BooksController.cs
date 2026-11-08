@@ -1,5 +1,7 @@
+using Api.Data;
 using Api.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Api.Controllers
 {
@@ -7,63 +9,75 @@ namespace Api.Controllers
     [ApiController]
     public class BooksController : ControllerBase
     {
-        //The reason we are static because this way the list will be created once when the controller is first instantiated.
-        static private List<Book> books = new List<Book>
+        /*
+        *The reason we are static because this way the list will be created once when the controller is first instantiated.
+        */
+        // static private List<Book> books = new List<Book>
+        // {
+        //     new Book
+        //     {
+        //         Id = 1,
+        //         Title = "Dune",
+        //         Author = "Frank Herbert",
+        //         YearPublished = 1965
+        //     },
+        //     new Book
+        //     {
+        //         Id = 2,
+        //         Title = "To Kill a Mockingbird",
+        //         Author = "Harper Lee",
+        //         YearPublished = 1960
+        //     },
+        //     new Book
+        //     {
+        //         Id = 3,
+        //         Title = "1984",
+        //         Author = "George Orwell",
+        //         YearPublished = 1949
+        //     },
+        //     new Book
+        //     {
+        //         Id = 4,
+        //         Title = "The Hobbit",
+        //         Author = "J. R. R. Tolkien",
+        //         YearPublished = 1937
+        //     },
+        //     new Book
+        //     {
+        //         Id = 5,
+        //         Title = "The Great Gatsby",
+        //         Author = "F. Scott Fitzgerald",
+        //         YearPublished = 1925
+        //     }
+        // };
+
+        private readonly FirstAPIContext _context;
+
+        public BooksController(FirstAPIContext context)
         {
-            new Book
-            {
-                Id = 1,
-                Title = "Dune",
-                Author = "Frank Herbert",
-                YearPublished = 1965
-            },
-            new Book
-            {
-                Id = 2,
-                Title = "To Kill a Mockingbird",
-                Author = "Harper Lee",
-                YearPublished = 1960
-            },
-            new Book
-            {
-                Id = 3,
-                Title = "1984",
-                Author = "George Orwell",
-                YearPublished = 1949
-            },
-            new Book
-            {
-                Id = 4,
-                Title = "The Hobbit",
-                Author = "J. R. R. Tolkien",
-                YearPublished = 1937
-            },
-            new Book
-            {
-                Id = 5,
-                Title = "The Great Gatsby",
-                Author = "F. Scott Fitzgerald",
-                YearPublished = 1925
-            }
-        };
+            _context = context;
+        }
 
         [HttpGet] //GET all book list
-        public ActionResult<List<Book>> GetBooks()
+        public async Task<ActionResult<List<Book>>> GetBooks()
         {
-            return Ok(books);
+            return Ok(await _context.Books.ToListAsync());
         }
 
         [HttpGet("id")] //Get specific book
-        public ActionResult<Book>GetBooksById(int id)
+        public async Task<ActionResult<Book>>GetBooksById(int id)
         {
-            var book = books.FirstOrDefault(x => x.Id == id);
+            var book = await _context.Books.FindAsync(id);
             if (book == null)
                 return NotFound();
-            return Ok(book);
+            else
+            {
+             return Ok(book);   
+            }
         }
 
-        [HttpPost]
-        public ActionResult<Book>AddBook(Book newbook)
+        [HttpPost] //Post specific book
+        public async Task<ActionResult<Book>>AddBook(Book newbook)
         {
             if(newbook == null)
             {
@@ -71,17 +85,18 @@ namespace Api.Controllers
             }
             else
             {
-                books.Add(newbook);
+                _context.Books.Add(newbook);
+                await _context.SaveChangesAsync();
 
                 return CreatedAtAction(nameof(GetBooksById), new {id = newbook.Id}, newbook);
             }
         }
 
         [HttpPut("id")]
-        //Not returning any object we are just returning status code
-        public IActionResult UpdateBook(int id, Book UpdatedBook)
+        //Not returning any object we are just returning status code therefore we use IActionResult Action Method.
+        public async Task<IActionResult> UpdateBook(int id, Book UpdatedBook)
         {
-            var book = books.FirstOrDefault(x => x.Id == id);
+            var book = await _context.Books.FindAsync(id);
 
             if (book == null)
             {
@@ -94,14 +109,16 @@ namespace Api.Controllers
                 book.Author = UpdatedBook.Author;
                 book.YearPublished = UpdatedBook.YearPublished;
 
+                await _context.SaveChangesAsync();
+
                 return NoContent();
             }
         }
 
         [HttpDelete("id")]
-        public IActionResult DeleteBook(int id)
+        public async Task<IActionResult> DeleteBook(int id)
         {
-            var book = books.FirstOrDefault(x => x.Id == id);
+            var book = await _context.Books.FindAsync(id);
 
             if (book == null)
             {
@@ -109,7 +126,8 @@ namespace Api.Controllers
             }
             else
             {
-                books.Remove(book);
+                _context.Books.Remove(book);
+                await _context.SaveChangesAsync();
 
                 return NoContent();
             }
