@@ -1,24 +1,27 @@
-using Microsoft.EntityFrameworkCore;
-using Api.Models;
+using Api.Services;
+using Api.Mcp;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+// builder.Services.AddSwaggerGen();
 builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<TodoContext>(opt =>
-    opt.UseInMemoryDatabase("TodoList"));
+builder.Services.AddHttpClient<ITodoService, TodosService>(client =>
+{
+    client.BaseAddress =
+        new Uri("https://dummyjson.com/todos");
+});
 
-// builder.Services.AddHttpClient("DummyApi", client =>
-// {
-//     client.BaseAddress = new Uri("https://dummyjson.com/todos");
-// });
+builder.Services.AddMcpServer().WithHttpTransport().WithToolsFromAssembly();
 
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    // app.UseSwagger();
+    // app.UseSwaggerUI();
     app.MapOpenApi();
     app.UseSwaggerUi(options =>
     {
@@ -28,8 +31,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseAuthorization();
-
 app.MapControllers();
+
+app.MapMcp("/mcp");
 
 app.Run();

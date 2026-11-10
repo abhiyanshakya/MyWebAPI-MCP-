@@ -1,3 +1,5 @@
 Api/bin/
 Api/obj/
-# Api/Properties/
+Api/Properties
+Api/TodosApi.csproj
+.mcp.json

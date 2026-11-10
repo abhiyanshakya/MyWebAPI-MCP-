@@ -1,0 +1,8 @@
+{
+	"mcpServers": {
+		"my-mcp-server-0f0f485b": {
+			"url": "http://localhost:5183/mcp",
+			"type": "http"
+		}
+	}
+}

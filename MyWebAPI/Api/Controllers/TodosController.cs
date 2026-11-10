@@ -1,107 +1,59 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Api.Services;
 using Api.Models;
 
-namespace TodoApi.Controllers
+namespace Api.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+
+public class TodosController(ITodoService service) : ControllerBase
 {
-    [Route("api/Todos")]
-    [ApiController]
-    public class TodosController : ControllerBase
+    public readonly ITodoService _service = service;
+
+    [HttpGet]
+    [ProducesResponseType(typeof(List<TodoDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(List<ErrorResponse>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(List<ErrorResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(List<ErrorResponse>), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> GetTodos()
     {
-        private readonly TodoContext _context;
-
-        public TodosController(TodoContext context)
+        try
         {
-            _context = context;
+            var todos = await _service.GetTodosAsync();
+            return Ok(todos);
         }
-
-        // GET: api/Todos
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<TodoItem>>> GetTodoItems()
+        catch (ApiException ex)
         {
-            return await _context.TodoItems.ToListAsync();
-        }
-
-        // GET: api/Todos/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<TodoItem>> GetTodoItem(long id)
-        {
-            var todoItem = await _context.TodoItems.FindAsync(id);
-
-            if (todoItem == null)
+            return StatusCode(ex.Status, new ErrorResponse
             {
-                return NotFound();
-            }
-
-            return todoItem;
+                Status = ex.Status,
+                Error = ex.Error,
+                Message = ex.Message
+            });
         }
+    }
 
-        // PUT: api/Todos/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutTodoItem(long id, TodoItem todoItem)
+    [HttpPost]
+    [ProducesResponseType(typeof(List<TodoDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(List<ErrorResponse>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(List<ErrorResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(List<ErrorResponse>), StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> PostTodo([FromBody] TodoDto todo)
+    {
+        try
         {
-            if (id != todoItem.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(todoItem).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TodoItemExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            var createdTodo = await _service.PostTodoAsync(todo);
+            return StatusCode(StatusCodes.Status201Created, createdTodo);
         }
-
-        // POST: api/Todos
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<TodoItem>> PostTodoItem(TodoItem todoItem)
+        catch (ApiException ex)
         {
-            _context.TodoItems.Add(todoItem);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetTodoItem", new { id = todoItem.Id }, todoItem);
-        }
-
-        // DELETE: api/Todos/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTodoItem(long id)
-        {
-            var todoItem = await _context.TodoItems.FindAsync(id);
-            if (todoItem == null)
+            return StatusCode(ex.Status, new ErrorResponse
             {
-                return NotFound();
-            }
-
-            _context.TodoItems.Remove(todoItem);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        private bool TodoItemExists(long id)
-        {
-            return _context.TodoItems.Any(e => e.Id == id);
+                Status = ex.Status,
+                Error = ex.Error,
+                Message = ex.Message
+            });
         }
     }
 }
